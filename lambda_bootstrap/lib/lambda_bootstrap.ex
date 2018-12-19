@@ -1,10 +1,9 @@
 defmodule LambdaBootstrap do
   @moduledoc """
-  Documentation for LambdaBootstrap.
-  """
+  Read Lambda request, process, return, repeat.
 
-  @doc """
-  Read Lambda request, process, return
+  This module provides a simple loop that handles
+  Lambda requests.
   """
 
   @content_type_json "application/json"
