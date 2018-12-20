@@ -9,7 +9,7 @@ build: layer-$(ELIXIR_VERSION).zip
 
 publish: .layer-$(ELIXIR_VERSION)-version
 
-layer-$(ELIXIR_VERSION).zip: Dockerfile
+layer-$(ELIXIR_VERSION).zip: Dockerfile bootstrap
 	docker build --build-arg ERLANG_VERSION=$(ERLANG_VERSION) --build-arg ELIXIR_VERSION=$(ELIXIR_VERSION) -t elixir-provided-lambda . && \
 	docker run --rm elixir-provided-lambda cat /tmp/otp-$(ERLANG_VERSION).zip > ./layer-$(ELIXIR_VERSION).zip
 

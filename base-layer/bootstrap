@@ -1,6 +1,6 @@
 #!/bin/sh
 set -euo pipefail
 
-export ERL_LIBS=$LAMBDA_TASK_ROOT
+export ERL_LIBS="${LAMBDA_TASK_ROOT}/lib"
 
 elixir -e "LambdaBootstrap.bootstrap()"
