@@ -14,7 +14,6 @@ update: package
 	aws lambda update-function-code --function-name elixir-test --zip-file fileb://function.zip
 
 invoke:
-	aws lambda invoke --function-name elixir-test --payload '{"text":"Hello"}' response.txt && \
-	cat response.txt
+	aws lambda invoke --function-name elixir-test --payload '{"text":"Hello"}' /dev/stdout
 
 .PHONY: package create update invoke

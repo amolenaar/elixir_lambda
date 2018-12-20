@@ -16,8 +16,9 @@ defmodule LambdaBootstrap do
     base_url = "http://#{lambda_runtime_api}/2018-06-01" |> String.to_charlist
 
     # TODO: check prerequisites. else report to '/runtime/init/error' and quit
+    Code.compile_string("defmodule LambdaRuntime.Handler, do: (def h(e, c), do: " <> handler <> "(e, c))")
 
-    loop(:httpc, base_url, handler)
+    loop(:httpc, base_url, &LambdaRuntime.Handler.h/2)
   end
 
   def loop(httpc, base_url, handler) do
@@ -45,8 +46,7 @@ defmodule LambdaBootstrap do
           :cognito_identity => Map.get(headers, 'lambda-runtime-cognito-identity')
         }
 
-        {response, _args} = Code.eval_string(handler <> "(e, c)", [e: event, c: context])
-        case response do
+        case handler.(event, context) do
           {:ok, response} when is_map(response) or is_list(response) or is_tuple(response) ->
             {:ok, response} = Jason.encode(response)
             send_response(httpc, base_url, request_id, @content_type_json, response)
