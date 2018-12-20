@@ -11,7 +11,7 @@ defmodule LambdaBootstrapTest do
       do: {:ok,
             {{'HTTP/1.1', 200, 'OK'},
             [
-              {'Lambda-Runtime-Aws-Request-Id', '--request-id--'}
+              {'lambda-runtime-aws-request-id', '--request-id--'}
             ],  """
                 {
                   "path": "/test/hello",
@@ -46,7 +46,7 @@ defmodule LambdaBootstrapTest do
 
     def request(:post,
                 {'http://lambdahost/2018-06-01/runtime/invocation/--request-id--/response',
-                 [], "application/json", body}, [], []),
+                 [], 'application/json', body}, [], []),
       do: {:ok, body}
 
     def request(:post, {'http://lambdahost/2018-06-01/runtime/invocation/--request-id--/error', [], "application/json", body}, [], []),
@@ -57,6 +57,7 @@ defmodule LambdaBootstrapTest do
   def hello_world(event, context), do: {:ok, %{ :message => "Hello Elixir" }}
 
   test "Handling an event" do
-    assert LambdaBootstrap.handle_request(HttpcMock, @base_url, &hello_world/2) == {:ok, "{\"message\":\"Hello Elixir\"}"}
+
+    assert LambdaBootstrap.handle_request(HttpcMock, @base_url, "LambdaBootstrapTest.hello_world") == {:ok, "{\"message\":\"Hello Elixir\"}"}
   end
 end

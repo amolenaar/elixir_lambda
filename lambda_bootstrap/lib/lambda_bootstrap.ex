@@ -6,17 +6,18 @@ defmodule LambdaBootstrap do
   Lambda requests.
   """
 
-  @content_type_json "application/json"
+  @content_type_json 'application/json'
 
   def bootstrap do
     Application.ensure_all_started(:inets)
 
     lambda_runtime_api = System.get_env("AWS_LAMBDA_RUNTIME_API")
-    base_url = "http://#{lambda_runtime_api}/2018-06-01"
+    handler = System.get_env("_HANDLER")
+    base_url = "http://#{lambda_runtime_api}/2018-06-01" |> String.to_charlist
 
     # TODO: check prerequisites. else report to '/runtime/init/error' and quit
 
-    loop(:httpc, base_url, &hello_world/2)
+    loop(:httpc, base_url, handler)
   end
 
   def loop(httpc, base_url, handler) do
@@ -27,26 +28,32 @@ defmodule LambdaBootstrap do
   def handle_request(httpc, base_url, handler) do
     case httpc.request(:get, {base_url ++ '/runtime/invocation/next', []}, [], []) do
       {:ok, {{'HTTP/1.1', 200, 'OK'}, headers, body}} ->
-        headers = Map.new(headers)
-        request_id = Map.get(headers, 'Lambda-Runtime-Aws-Request-Id')
+        headers = Map.new(headers) |> IO.inspect
+        content_type = Map.get(headers, 'content-type')
+        request_id = Map.get(headers, 'lambda-runtime-aws-request-id')
+        event = case content_type do
+          @content_type_json -> Jason.decode!(body)
+          _ -> body
+        end
         context = %{
+          :content_type => content_type,
           :request_id => request_id,
-          :deadline => Map.get(headers, 'Lambda-Runtime-Deadline-Ms'),
-          :function_arn => Map.get(headers, 'Lambda-Runtime-Invoked-Function-Arn'),
-          :trace_id => Map.get(headers, 'Lambda-Runtime-Trace-Id'),
-          :client_context => Map.get(headers, 'Lambda-Runtime-Client-Context'),
-          :cognito_identity => Map.get(headers, 'Lambda-Runtime-Cognito-Identity')
+          :deadline => Map.get(headers, 'lambda-runtime-deadline-ms'),
+          :function_arn => Map.get(headers, 'lambda-runtime-invoked-function-arn'),
+          :trace_id => Map.get(headers, 'lambda-runtime-trace-id'),
+          :client_context => Map.get(headers, 'lambda-runtime-client-context'),
+          :cognito_identity => Map.get(headers, 'lambda-runtime-cognito-identity')
         }
-        {:ok, event} = Jason.decode(body)
 
-        case handler.(event, context) do
+        {response, _args} = Code.eval_string(handler <> "(e, c)", [e: event, c: context])
+        case response do
           {:ok, response} when is_map(response) or is_list(response) or is_tuple(response) ->
             {:ok, response} = Jason.encode(response)
             send_response(httpc, base_url, request_id, @content_type_json, response)
           {:ok, response} when is_binary(response) ->
-            send_response(httpc, base_url, request_id, "text/plain", response)
+            send_response(httpc, base_url, request_id, 'text/plain', response)
           {:ok, response} ->
-            send_response(httpc, base_url, request_id, "application/octet-stream", Kernel.inspect(response))
+            send_response(httpc, base_url, request_id, 'application/octet-stream', Kernel.inspect(response))
           {:ok, content_type, response} when is_binary(response) ->
             send_response(httpc, base_url, request_id, content_type, response)
           {:ok, content_type, response} ->
@@ -56,7 +63,6 @@ defmodule LambdaBootstrap do
           what_else ->
             send_error(httpc, base_url, request_id, Kernel.inspect(what_else))
         end
-
 
       maybe_error ->
         IO.puts("Error while requesting Lambda request: #{inspect maybe_error}. So long!")
