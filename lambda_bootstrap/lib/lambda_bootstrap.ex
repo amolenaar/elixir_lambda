@@ -82,5 +82,4 @@ defmodule LambdaBootstrap do
     })}, [], [])
   end
 
-  def hello_world(_event, _context), do: {:ok, %{ :message => "Hello Elixir" }}
 end
