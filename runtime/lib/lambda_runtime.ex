@@ -4,23 +4,32 @@ defmodule LambdaRuntime do
 
   This module provides a simple loop that handles
   Lambda requests.
+
+  Documentation on the Lambda interface can be found at
+  https://docs.aws.amazon.com/lambda/latest/dg/runtimes-api.html.
   """
 
   @content_type_json 'application/json'
 
-  def run() do
+  def run(httpc \\ :httpc) do
     Application.ensure_all_started(:inets)
 
     lambda_runtime_api = System.get_env("AWS_LAMBDA_RUNTIME_API")
     handler = System.get_env("_HANDLER")
     base_url = "http://#{lambda_runtime_api}/2018-06-01" |> String.to_charlist()
 
-    # TODO: check prerequisites. else report to '/runtime/init/error' and quit
-    Code.compile_string(
-      "defmodule LambdaRuntime.Handler, do: (def h(e, c), do: " <> handler <> "(e, c))"
-    )
+    if Regex.match?(~r"^[A-Z-a-z][A-Za-z0-9_.]+$", handler) do
+      # TODO: check prerequisites. else report to '/runtime/init/error' and quit
+      {func, _} = Code.eval_string("&#{handler}/2")
 
-    loop(:httpc, base_url, &LambdaRuntime.Handler.h/2)
+      loop(httpc, base_url, func)
+    else
+      send_init_error(
+        httpc,
+        base_url,
+        "Invalid handler signature: #{handler}. Expected something like \"Module.function\"."
+      )
+    end
   end
 
   def loop(httpc, base_url, handler) do
@@ -100,6 +109,21 @@ defmodule LambdaRuntime do
        Jason.encode!(%{
          "errorMessage" => message,
          "errorType" => "RuntimeException"
+       })},
+      [],
+      []
+    )
+  end
+
+  def send_init_error(httpc, base_url, message) do
+    url = base_url ++ '/runtime/init/error'
+
+    httpc.request(
+      :post,
+      {url, [], @content_type_json,
+       Jason.encode!(%{
+         "errorMessage" => message,
+         "errorType" => "InitializationError"
        })},
       [],
       []
