@@ -3,6 +3,5 @@ defmodule Hello do
   This is a simple example module. The infamous Hello World.
   """
 
-  def world(_event, _context), do: {:ok, %{ :message => "Hello Elixir" }}
-
+  def world(_event, _context), do: {:ok, %{:message => "Hello Elixir"}}
 end
