@@ -8,11 +8,12 @@ defmodule Example do
 
   ## Examples
 
-      iex> Example.hello()
-      {:ok, %{ :message => "Hello Elixir" }}
+      iex> Example.hello(%{}, %{})
+      {:ok, %{ :message => "Hello Elixir", context: %{}, event: %{} }}
 
   """
-  def hello do
-    {:ok, %{ :message => "Hello Elixir" }}
-  end
+
+  def hello(event, context),
+    do: {:ok, %{ :message => "Hello Elixir", :event => event, :context => context }}
+
 end

@@ -3,6 +3,6 @@ defmodule ExampleTest do
   doctest Example
 
   test "greets the world" do
-    assert Example.hello() == {:ok, %{ :message => "Hello Elixir" }}
+    assert Example.hello(%{}, %{}) == {:ok, %{ :message => "Hello Elixir", context: %{}, event: %{} }}
   end
 end
