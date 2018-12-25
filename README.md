@@ -66,6 +66,9 @@ To deploy the S3 bucket stack and the example stack, simply type:
 
 This will build the zip files, upload them to S3 and deploy the custom runtime and a Lambda function.
 
+To test the function, simply call:
+
+    make test
 
 ## Some work/considerations
 

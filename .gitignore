@@ -1,4 +1,6 @@
-.elixir-runtime-*-version
 elixir-runtime-*.zip
 example.zip
 .upload-artifacts-*
+.artifact-bucket
+.elixir-example
+test-output.txt

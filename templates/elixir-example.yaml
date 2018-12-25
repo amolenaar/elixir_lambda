@@ -27,6 +27,7 @@ Resources:
   ExampleFunction:
     Type: AWS::Lambda::Function
     Properties:
+      FunctionName: elixir-runtime-example
       Handler: Example.hello
       Runtime: provided
       Code:

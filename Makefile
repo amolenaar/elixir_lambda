@@ -16,8 +16,6 @@ all: elixir-example
 
 build: $(RUNTIME_ZIP)
 
-upload-artifacts: .upload-artifacts-${REV}
-
 $(RUNTIME_ZIP): Dockerfile bootstrap
 	docker build --build-arg ERLANG_VERSION=$(ERLANG_VERSION) \
 		--build-arg ELIXIR_VERSION=$(ELIXIR_VERSION) \
@@ -28,25 +26,37 @@ $(EXAMPLE_ZIP): example/lib/example.ex example/mix.exs $(RUNTIME_ZIP)
 	docker run -w /code -v $(PWD)/example:/code -u $(shell id -u):$(shell id -g) -e MIX_ENV=prod $(LAYER_NAME) mix compile && \
 	(cd example/_build/prod && zip -r ../../../$(EXAMPLE_ZIP) lib)
 
-artifact-bucket: ./templates/artifact-bucket.yaml
+artifact-bucket: .artifact-bucket
+
+.artifact-bucket: ./templates/artifact-bucket.yaml
 	aws cloudformation deploy \
 		--stack-name artifact-bucket \
 		--template-file ./templates/artifact-bucket.yaml \
-		--no-fail-on-empty-changeset
+		--no-fail-on-empty-changeset && \
+	touch .artifact-bucket
 
-.upload-artifacts-${REV}: $(RUNTIME_ZIP) $(EXAMPLE_ZIP)
-	ARTIFACT_STORE=$(shell aws cloudformation list-exports| jq -r '.Exports[] | select(.Name=="artifact-store") | .Value') && \
+upload-artifacts: .upload-artifacts-$(REV)
+
+.upload-artifacts-$(REV): .artifact-bucket $(RUNTIME_ZIP) $(EXAMPLE_ZIP)
+	ARTIFACT_STORE=$(shell aws cloudformation list-exports |  python -c "import sys, json; print(filter(lambda e: e['Name'] == 'artifact-store', json.load(sys.stdin)['Exports'])[0]['Value'])") && \
 	aws s3 cp $(RUNTIME_ZIP) s3://$${ARTIFACT_STORE}/$(S3_RUNTIME_ZIP) && \
 	aws s3 cp $(EXAMPLE_ZIP) s3://$${ARTIFACT_STORE}/$(S3_EXAMPLE_ZIP) && \
-	touch .upload-artifacts-${REV}
+	touch .upload-artifacts-$(REV)
 
-elixir-example: ./templates/elixir-example.yaml upload-artifacts
+elixir-example: .elixir-example
+
+.elixir-example: ./templates/elixir-example.yaml .upload-artifacts-$(REV)
 	aws cloudformation deploy \
 		--stack-name elixir-example \
 		--template-file ./templates/elixir-example.yaml \
 		--parameter-overrides "RuntimeZip=$(S3_RUNTIME_ZIP)" \
 							  "ExampleZip=$(S3_EXAMPLE_ZIP)" \
 		--capabilities "CAPABILITY_IAM" \
-		--no-fail-on-empty-changeset
+		--no-fail-on-empty-changeset && \
+	touch .elixir-example
 
-.PHONY: all build artifact-bucket elixir-example
+test: .elixir-example
+	aws lambda invoke --function-name elixir-runtime-example --payload '{"text":"Hello"}' test-output.txt && \
+	echo "Lambda responded with:" && cat test-output.txt && echo
+
+.PHONY: all build artifact-bucket upload-artifacts elixir-example test
