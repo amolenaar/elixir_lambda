@@ -21,12 +21,12 @@ upload-artifacts: .upload-artifacts-${REV}
 $(RUNTIME_ZIP): Dockerfile bootstrap
 	docker build --build-arg ERLANG_VERSION=$(ERLANG_VERSION) \
 		--build-arg ELIXIR_VERSION=$(ELIXIR_VERSION) \
-		-t $(LAYER_NAME) . &&
+		-t $(LAYER_NAME) . && \
 	docker run --rm $(LAYER_NAME) cat /tmp/runtime.zip > ./$(RUNTIME_ZIP)
 
-$(EXAMPLE_ZIP): example/lib/example.ex example/mix.exs
-	cd example && mix test && MIX_ENV=prod mix compile && \
-	(cd _build/prod && zip -r ../../../$(EXAMPLE_ZIP) lib)
+$(EXAMPLE_ZIP): example/lib/example.ex example/mix.exs $(RUNTIME_ZIP)
+	docker run -w /code -v $(PWD)/example:/code -u $(shell id -u):$(shell id -g) -e MIX_ENV=prod $(LAYER_NAME) mix compile && \
+	(cd example/_build/prod && zip -r ../../../$(EXAMPLE_ZIP) lib)
 
 artifact-bucket: ./templates/artifact-bucket.yaml
 	aws cloudformation deploy \
