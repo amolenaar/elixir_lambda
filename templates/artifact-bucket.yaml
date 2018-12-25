@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "artifact-store-${AWS::AccountId}"
+      AccessControl: Private
+
+  Parameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: artifact-store
+      Type: "String"
+      Value: !Ref Bucket
+      Description: "S3 bucket for (intermediate) artifact storage"
+
+Outputs:
+  ArtifactStore:
+    Value: !Ref Bucket
+    Export:
+      Name: artifact-store

@@ -6,15 +6,57 @@ This project provides a simple way to get started with running Lambda functions 
 
 ## Design principes
 
-- Stay close to the current way Lambda functions work: it should be enough to provide one file alone, no full projects
-- The approach should be leaner than OTP releases, if possible. We're only trying to execute one function
-- Dependencies should be flattened?
+- Stay close to the current way Lambda functions work: it should be enough to provide one file alone, no full projects.
+- The approach should be leaner than OTP releases, if possible. In general, we're only trying to execute one function.
+- This implementation follows the [Lambda runtime API](https://docs.aws.amazon.com/lambda/latest/dg/runtimes-api.html).
 
-- What do I need to support the [Lambda runtime API](https://docs.aws.amazon.com/lambda/latest/dg/runtimes-api.html)?
+In order to keep the deployment code as small as possible, many OTP applications have been left out.
+The applications included in the runtime are:
+
+ * asn1-5.0.8
+ * common_test-1.16.1
+ * compiler-7.3
+ * crypto-4.4
+ * erl_interface-3.10.4
+ * erts-10.2
+ * et-1.6.4
+ * eunit-2.3.7
+ * ftp-1.0.1
+ * hipe-3.18.2
+ * inets-7.0.3
+ * kernel-6.2
+ * megaco-3.18.4
+ * os_mon-2.4.7
+ * parsetools-2.1.8
+ * public_key-1.6.4
+ * runtime_tools-1.13.1
+ * sasl-3.3
+ * ssh-4.7.2
+ * ssl-9.1
+ * stdlib-3.7
+ * syntax_tools-2.1.6
+ * tools-3.0.2
+
+There may be a few more than can be left out, though. Most notably tooling like Mnesia is left out. It should have no place of a Lambda function IMHO.
+
+Al in all this keeps the layer relatively small (41MB) for a complete system.
+
+
+# Getting it up and running
+
+In general, it's good practice to deploy code on AWS by meand of Cloudformation templates. The example setup provided is
+no different.
+
+It does deploy 3 stacks:
+
+ 1. An S3 bucket acts as an intermediate store to put stuff in Lambda
+ 2. Upload the Elixir runtime. The ARN of the runtime is stored in the parameter store, so it can be updated later on.
+ 3. Finally, the example Lambda function is packaged and deployed using SAM.
 
 ## Some work/considerations
 
-- [ ] How to deal with consolidated bem files (used for protocols) - for now, leave as is.
-- [ ] How to keep the lambda code itself as small as possible?
+- [X] How to deal with consolidated bem files (used for protocols) - for now, leave as is.
+- [X] How to keep the lambda code itself as small as possible? Removed as many apps from the deployment as possible
 - [ ] Support 5xx and 5xx response codes from AWS Lambda side
 - [ ] Mix task for packaging code
+
