@@ -45,13 +45,27 @@ Al in all this keeps the layer relatively small (41MB) for a complete system.
 # Getting it up and running
 
 In general, it's good practice to deploy code on AWS by meand of Cloudformation templates. The example setup provided is
-no different.
-
-It does deploy 3 stacks:
+no different. It does deploy 2 stacks:
 
  1. An S3 bucket acts as an intermediate store to put stuff in Lambda
- 2. Upload the Elixir runtime. The ARN of the runtime is stored in the parameter store, so it can be updated later on.
- 3. Finally, the example Lambda function is packaged and deployed using SAM.
+ 2. A stack featuring the Elixir runtime, with an example function.
+
+To work with this repo, there are a few prerequisites to set up:
+
+ 1. [docker](https://www.docker.com), used to build the custom runtime and example
+ 2. [aws-cli](https://aws.amazon.com/cli/), installed using Python 2 or 3
+ 3. make ([GNU Make](https://www.gnu.org/software/make/))
+ 4. [jq](https://stedolan.github.io/jq/), the JSON query tool
+
+To get started, make sure you can access your AWS account (e.g. try `aws cloudformation list-stacks`). If this does not
+work, set your `AWS_DEFAULT_PROFILE` or access keys.
+
+To deploy the S3 bucket stack and the example stack, simply type:
+
+    make
+
+This will build the zip files, upload them to S3 and deploy the custom runtime and a Lambda function.
+
 
 ## Some work/considerations
 
