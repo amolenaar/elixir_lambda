@@ -13,7 +13,7 @@ defmodule Example do
 
   """
 
-  def hello(event, context),
+  def hello(event, _context),
     do: {:ok, %{ :message => "Hello Elixir", :event => event }}
 
 end
