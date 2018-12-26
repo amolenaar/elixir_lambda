@@ -5,7 +5,7 @@ ERLANG_VERSION=21.2
 ELIXIR_VERSION=1.7.4
 
 RUNTIME_ZIP=$(LAYER_NAME)-$(ELIXIR_VERSION).zip
-EXAMPLE_ZIP=example.zip
+EXAMPLE_ZIP=example/example-0.1.0.zip
 
 REV=$(shell git rev-parse --short HEAD)
 
@@ -22,9 +22,10 @@ $(RUNTIME_ZIP): Dockerfile bootstrap
 		-t $(LAYER_NAME) . && \
 	docker run --rm $(LAYER_NAME) cat /tmp/runtime.zip > ./$(RUNTIME_ZIP)
 
+example: $(EXAMPLE_ZIP)
+
 $(EXAMPLE_ZIP): example/lib/example.ex example/mix.exs $(RUNTIME_ZIP)
-	docker run -w /code -v $(PWD)/example:/code -u $(shell id -u):$(shell id -g) -e MIX_ENV=prod $(LAYER_NAME) mix compile && \
-	(cd example/_build/prod && zip -r ../../../$(EXAMPLE_ZIP) lib)
+	docker run -w /code -v $(PWD)/example:/code -u $(shell id -u):$(shell id -g) -e MIX_ENV=prod $(LAYER_NAME) mix package
 
 artifact-bucket: .artifact-bucket
 
