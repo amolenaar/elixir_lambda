@@ -28,7 +28,7 @@ this layer are reduced to the ones used for networking, including SSL, and
 standard library functions. Most notably tooling like Mnesia is left out. It
 should have no place of a Lambda function IMHO.
 
-All in all this keeps the layer relatively small (28MB) for a complete system.
+All in all this keeps the layer relatively small (23MB) for a complete system.
 
 
 # Getting it up and running
