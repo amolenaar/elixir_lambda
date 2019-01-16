@@ -18,7 +18,7 @@ defmodule LambdaRuntime do
     handler = System.get_env("_HANDLER")
     base_url = "http://#{lambda_runtime_api}/2018-06-01" |> String.to_charlist()
 
-    if Regex.match?(~r"^[A-Z-a-z][A-Za-z0-9_.]+$", handler) do
+    if Regex.match?(~r"^[A-Z:][A-Za-z0-9_.]+$", handler) do
       # TODO: check prerequisites. else report to '/runtime/init/error' and quit
       {func, _} = Code.eval_string("&#{handler}/2")
 
