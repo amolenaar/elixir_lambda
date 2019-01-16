@@ -27,9 +27,12 @@ example: $(EXAMPLE_ZIP)
 $(EXAMPLE_ZIP): example/lib/example.ex example/mix.exs $(RUNTIME_ZIP)
 	docker run -w /code -v $(PWD)/example:/code -u $(shell id -u):$(shell id -g) -e MIX_ENV=prod $(LAYER_NAME) mix package
 
+aws-check:
+	aws cloudformation list-stacks > /dev/null || { echo "Could not reach AWS, please set your AWS_PROFILE or AWS keys." >&2 && false; }
+
 artifact-bucket: .artifact-bucket
 
-.artifact-bucket: ./templates/artifact-bucket.yaml
+.artifact-bucket: aws-check ./templates/artifact-bucket.yaml
 	aws cloudformation deploy \
 		--stack-name artifact-bucket \
 		--template-file ./templates/artifact-bucket.yaml \
@@ -38,7 +41,7 @@ artifact-bucket: .artifact-bucket
 
 upload-artifacts: .upload-artifacts-$(REV)
 
-.upload-artifacts-$(REV): .artifact-bucket $(RUNTIME_ZIP) $(EXAMPLE_ZIP)
+.upload-artifacts-$(REV): aws-check .artifact-bucket $(RUNTIME_ZIP) $(EXAMPLE_ZIP)
 	ARTIFACT_STORE=$(shell aws cloudformation list-exports |  python -c "import sys, json; print(filter(lambda e: e['Name'] == 'artifact-store', json.load(sys.stdin)['Exports'])[0]['Value'])") && \
 	aws s3 cp $(RUNTIME_ZIP) s3://$${ARTIFACT_STORE}/$(S3_RUNTIME_ZIP) && \
 	aws s3 cp $(EXAMPLE_ZIP) s3://$${ARTIFACT_STORE}/$(S3_EXAMPLE_ZIP) && \
@@ -46,7 +49,7 @@ upload-artifacts: .upload-artifacts-$(REV)
 
 elixir-example: .elixir-example
 
-.elixir-example: ./templates/elixir-example.yaml .upload-artifacts-$(REV)
+.elixir-example: aws-check ./templates/elixir-example.yaml .upload-artifacts-$(REV)
 	aws cloudformation deploy \
 		--stack-name elixir-example \
 		--template-file ./templates/elixir-example.yaml \
@@ -56,8 +59,8 @@ elixir-example: .elixir-example
 		--no-fail-on-empty-changeset && \
 	touch .elixir-example
 
-test: .elixir-example
+test: aws-check .elixir-example
 	aws lambda invoke --function-name elixir-runtime-example --payload '{"text":"Hello"}' test-output.txt && \
 	echo "Lambda responded with:" && cat test-output.txt && echo
 
-.PHONY: all build artifact-bucket upload-artifacts elixir-example test
+.PHONY: all build aws-check artifact-bucket upload-artifacts elixir-example test
