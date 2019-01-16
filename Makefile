@@ -28,6 +28,7 @@ $(EXAMPLE_ZIP): example/lib/example.ex example/mix.exs $(RUNTIME_ZIP)
 	docker run -w /code -v $(PWD)/example:/code -u $(shell id -u):$(shell id -g) -e MIX_ENV=prod $(LAYER_NAME) mix package
 
 aws-check:
+	@echo "Performing a pre-flight check..."
 	aws cloudformation list-stacks > /dev/null || { echo "Could not reach AWS, please set your AWS_PROFILE or AWS keys." >&2 && false; }
 
 artifact-bucket: .artifact-bucket
@@ -55,6 +56,8 @@ elixir-example: .elixir-example
 		--template-file ./templates/elixir-example.yaml \
 		--parameter-overrides "RuntimeZip=$(S3_RUNTIME_ZIP)" \
 							  "ExampleZip=$(S3_EXAMPLE_ZIP)" \
+							  "ErlangVersion=$(ERLANG_VERSION)" \
+							  "ElixirVersion=$(ELIXIR_VERSION)" \
 		--capabilities "CAPABILITY_IAM" \
 		--no-fail-on-empty-changeset && \
 	touch .elixir-example
