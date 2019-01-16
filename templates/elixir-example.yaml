@@ -23,7 +23,7 @@ Resources:
     Type: AWS::Lambda::LayerVersion
     Properties:
       LayerName: elixir-runtime
-      Description: !Sub "Erlang ${ErlangVersion}/Elixir ${ElixirVersion} runtime layer for AWS Lambda"
+      Description: !Sub "Elixir ${ElixirVersion} / Erlang ${ErlangVersion} runtime layer for AWS Lambda"
       LicenseInfo: Apache License, Version 2
       Content:
         S3Bucket: !Ref S3Bucket
