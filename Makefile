@@ -31,26 +31,26 @@ aws-check:
 	@echo "Performing a pre-flight check..."
 	aws cloudformation describe-account-limits > /dev/null || { echo "Could not reach AWS, please set your AWS_PROFILE or access keys." >&2 && false; }
 
-artifact-bucket: .artifact-bucket
+artifact-bucket: .cfn-artifact-bucket
 
-.artifact-bucket: aws-check ./templates/artifact-bucket.yaml
+.cfn-artifact-bucket: aws-check ./templates/artifact-bucket.yaml
 	aws cloudformation deploy \
 		--stack-name artifact-bucket \
 		--template-file ./templates/artifact-bucket.yaml \
 		--no-fail-on-empty-changeset && \
-	touch .artifact-bucket
+	touch .cfn-artifact-bucket
 
-upload-artifacts: .upload-artifacts-$(REV)
+upload-artifacts: .s3-upload-artifacts-$(REV)
 
-.upload-artifacts-$(REV): aws-check .artifact-bucket $(RUNTIME_ZIP) $(EXAMPLE_ZIP)
+.s3-upload-artifacts-$(REV): aws-check .cfn-artifact-bucket $(RUNTIME_ZIP) $(EXAMPLE_ZIP)
 	ARTIFACT_STORE=$(shell aws cloudformation list-exports |  python -c "import sys, json; print(filter(lambda e: e['Name'] == 'artifact-store', json.load(sys.stdin)['Exports'])[0]['Value'])") && \
 	aws s3 cp $(RUNTIME_ZIP) s3://$${ARTIFACT_STORE}/$(S3_RUNTIME_ZIP) && \
 	aws s3 cp $(EXAMPLE_ZIP) s3://$${ARTIFACT_STORE}/$(S3_EXAMPLE_ZIP) && \
-	touch .upload-artifacts-$(REV)
+	touch .s3-upload-artifacts-$(REV)
 
-elixir-example: .elixir-example
+elixir-example: .cfn-elixir-example
 
-.elixir-example: aws-check ./templates/elixir-example.yaml .upload-artifacts-$(REV)
+.cfn-elixir-example: aws-check ./templates/elixir-example.yaml .s3-upload-artifacts-$(REV)
 	aws cloudformation deploy \
 		--stack-name elixir-example \
 		--template-file ./templates/elixir-example.yaml \
@@ -60,9 +60,9 @@ elixir-example: .elixir-example
 							  "ElixirVersion=$(ELIXIR_VERSION)" \
 		--capabilities "CAPABILITY_IAM" \
 		--no-fail-on-empty-changeset && \
-	touch .elixir-example
+	touch .cfn-elixir-example
 
-test: aws-check .elixir-example
+test: aws-check .cfn-elixir-example
 	aws lambda invoke --function-name elixir-runtime-example --payload '{"text":"Hello"}' test-output.txt && \
 	echo "=== Lambda responded with: ===" && cat test-output.txt && echo && echo "=== end-of-output ==="
 
