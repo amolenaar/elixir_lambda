@@ -1,5 +1,5 @@
 elixir-runtime-*.zip
-example.zip
+example-*.zip
 .s3-upload-artifacts-*
 .cfn-artifact-bucket
 .cfn-elixir-example
