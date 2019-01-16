@@ -17,6 +17,8 @@ The runtime itself should be bundled as a zip file. An easy way to build such a 
 
 In order to make the zip file not too big, I had to strip it down considerably. The combined layers, including the runtime should be no bigger than 65MB. Many tools, like Observer (monitoring), Mnesia (database), terminal and GUI related code can all be left out. I was able to bring down the size to a decent 23MB.
 
+The defacto way to distribute an Erlang application is by means of an OTP release. This bundles the code and the BEAM in one single package. For Lambda I want this to be more lean: you'd just have to deploy your compiled code and that should be it. This makes deployments faster, since there are less bytes to move around and the application can be kept in the runtime layer.
+
 ## Benchmarks
 
 We all want it to be fast. I have not done a full blown performance test, but for the example (hello world) function I deployed the responses were quite okay, in the low tens and many times just a couple of milliseconds.
