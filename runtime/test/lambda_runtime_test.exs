@@ -2,19 +2,17 @@ defmodule LambdaRuntimeTest do
   use ExUnit.Case
   doctest LambdaRuntime
 
-  @base_url 'http://lambdahost/2018-06-01'
-
   def hello_world(_event, _context), do: {:ok, %{:message => "Hello Elixir"}}
 
   def hello_error(_event, _context), do: {:error, "Error message"}
 
   test "handling of an event" do
-    assert LambdaRuntime.handle_request(HttpcMock, @base_url, &LambdaRuntimeTest.hello_world/2) ==
+    assert LambdaRuntime.handle_request(&BackendMock.backend/4, &LambdaRuntimeTest.hello_world/2) ==
              {:mock, "{\"message\":\"Hello Elixir\"}"}
   end
 
   test "an error response" do
-    assert LambdaRuntime.handle_request(HttpcMock, @base_url, &LambdaRuntimeTest.hello_error/2) ==
+    assert LambdaRuntime.handle_request(&BackendMock.backend/4, &LambdaRuntimeTest.hello_error/2) ==
              {:mock, "{\"errorMessage\":\"Error message\",\"errorType\":\"RuntimeException\"}"}
   end
 
@@ -27,8 +25,8 @@ defmodule LambdaRuntimeTest do
   end
 end
 
-defmodule HttpcMock do
-  def request(:get, {'http://lambdahost/2018-06-01/runtime/invocation/next', []}, [], []),
+defmodule BackendMock do
+  def backend(:get, '/runtime/invocation/next', _, _),
     do:
       {:ok,
        {{'HTTP/1.1', 200, 'OK'},
@@ -67,24 +65,23 @@ defmodule HttpcMock do
         }
         """}}
 
-  def request(
+  def backend(
         :post,
-        {'http://lambdahost/2018-06-01/runtime/invocation/--request-id--/response', [],
-         'application/json', body},
-        [],
-        []
+        '/runtime/invocation/--request-id--/response',
+        'application/json', body
       ),
       do: {:mock, body}
 
-  def request(
+  def backend(
         :post,
-        {'http://lambdahost/2018-06-01/runtime/invocation/--request-id--/error', [],
-         'application/json', body},
-        [],
-        []
+        '/runtime/invocation/--request-id--/error',
+         'application/json', body
       ),
       do: {:mock, body}
 
+end
+
+defmodule HttpcMock do
   def request(
         :post,
         {'http://lambdahost/2018-06-01/runtime/init/error', [], 'application/json', body},
