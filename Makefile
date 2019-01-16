@@ -29,7 +29,7 @@ $(EXAMPLE_ZIP): example/lib/example.ex example/mix.exs $(RUNTIME_ZIP)
 
 aws-check:
 	@echo "Performing a pre-flight check..."
-	aws cloudformation list-stacks > /dev/null || { echo "Could not reach AWS, please set your AWS_PROFILE or AWS keys." >&2 && false; }
+	aws cloudformation describe-account-limits > /dev/null || { echo "Could not reach AWS, please set your AWS_PROFILE or access keys." >&2 && false; }
 
 artifact-bucket: .artifact-bucket
 
@@ -64,6 +64,6 @@ elixir-example: .elixir-example
 
 test: aws-check .elixir-example
 	aws lambda invoke --function-name elixir-runtime-example --payload '{"text":"Hello"}' test-output.txt && \
-	echo "Lambda responded with:" && cat test-output.txt && echo
+	echo "=== Lambda responded with: ===" && cat test-output.txt && echo && echo "=== end-of-output ==="
 
 .PHONY: all build aws-check artifact-bucket upload-artifacts elixir-example test
