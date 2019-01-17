@@ -14,6 +14,6 @@ defmodule Example do
   """
 
   def hello(event, _context),
-    do: {:ok, %{ :message => "Hello Elixir", :event => event }}
+    do: {:ok, %{ :message => "Elixir on AWS Lambda", :event => event }}
 
 end
