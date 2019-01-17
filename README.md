@@ -61,6 +61,42 @@ To test the function, simply call:
 
     make test
 
+## Building a Lambda function
+
+A Lambda function can be any function defined by `ModuleName.function_name`. The function should take two arguments, `event` and `context`.
+
+A simple Lambda handler module could look like this:
+
+    defmodule Example do
+
+      def hello(_event, _context) do
+        {:ok, %{ :message => "Elixir on AWS Lambda" }}
+      end
+
+    end
+
+The event is a dictionary with event information. The contents depends on the type of event received (API Gateway, SQS, etc.).
+
+The response can be in the form:
+
+    {:ok, [content_type,] content}
+
+Content can be a dictionary or list, in which case it's serialized to JSON. If its a binary (string) it will be returned as `text/plain` by default. Any other type will be "inspected" returned as `application/octet-stream` by default.
+
+If a `content_type` is provided that is used instead. Binary content is returned as is, the rest is "inspected".
+
+The context object contains some extra info about the event:
+
+  - `:content_type`
+  - `:request_id`
+  - `:deadline`
+  - `:function_arn`
+  - `:trace_id`
+  - `:client_context`
+  - `:cognito_identity`
+
+The runtime is bundled with [Jason](https://hex.pm/packages/jason), a fast 100% Elixir JSON serializer/deserializer.
+
 ## Some work/considerations
 
 - [X] How to deal with consolidated bem files (used for protocols) - for now,
