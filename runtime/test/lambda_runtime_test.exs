@@ -2,25 +2,58 @@ defmodule LambdaRuntimeTest do
   use ExUnit.Case
   doctest LambdaRuntime
 
-  def hello_world(_event, _context), do: {:ok, %{:message => "Hello Elixir"}}
+  defp handle(handler),
+    do: LambdaRuntime.handle(&BackendMock.backend/4, handler)
 
-  def hello_error(_event, _context), do: {:error, "Error message"}
+  test "handling of an event with a dictionary" do
+    assert handle(fn _e, _c -> {:ok, %{:message => "Hello Elixir"}} end) ==
+             {:mock, 'application/json', "{\"message\":\"Hello Elixir\"}"}
+  end
 
-  test "handling of an event" do
-    assert LambdaRuntime.handle_request(&BackendMock.backend/4, &LambdaRuntimeTest.hello_world/2) ==
-             {:mock, "{\"message\":\"Hello Elixir\"}"}
+  test "handling of an event with a list" do
+    assert handle(fn _e, _c -> {:ok, [1, 2, 3]} end) == {:mock, 'application/json', "[1,2,3]"}
+  end
+
+  test "handling of an event with a charlist" do
+    assert handle(fn _e, _c -> {:ok, 'abc'} end) == {:mock, 'application/json', "[97,98,99]"}
+  end
+
+  test "handling of an event with a binary" do
+    assert handle(fn _e, _c -> {:ok, "Hello Elixir"} end) == {:mock, 'text/plain', "Hello Elixir"}
+  end
+
+  test "handling of an event with a tuple" do
+    assert handle(fn _e, _c -> {:ok, {1, 2, 3}} end) ==
+             {:mock, 'application/octet-stream', "{1, 2, 3}"}
+  end
+
+  test "handling of an event with a number" do
+    assert handle(fn _e, _c -> {:ok, 42} end) == {:mock, 'application/octet-stream', "42"}
   end
 
   test "an error response" do
-    assert LambdaRuntime.handle_request(&BackendMock.backend/4, &LambdaRuntimeTest.hello_error/2) ==
-             {:mock, "{\"errorMessage\":\"Error message\",\"errorType\":\"RuntimeException\"}"}
+    assert handle(fn _e, _c -> {:error, "Error message"} end) ==
+             {:mock, 'application/json',
+              "{\"errorMessage\":\"Error message\",\"errorType\":\"RuntimeException\"}"}
+  end
+
+  test "an non-string error response" do
+    assert handle(fn _e, _c -> {:error, %{:message => "Error message"}} end) ==
+             {:mock, 'application/json',
+              "{\"errorMessage\":{\"message\":\"Error message\"},\"errorType\":\"RuntimeException\"}"}
+  end
+
+  test "handling of an event with just some output" do
+    assert handle(fn _e, _c -> {:meaning, 42} end) ==
+             {:mock, 'application/json',
+              "{\"errorMessage\":\"{:meaning, 42}\",\"errorType\":\"RuntimeException\"}"}
   end
 
   test "initialization error" do
     System.put_env([{"AWS_LAMBDA_RUNTIME_API", "lambdahost"}, {"_HANDLER", "wrong handler"}])
 
     assert LambdaRuntime.run(HttpcMock) ==
-             {:mock,
+             {:mock, 'application/json',
               "{\"errorMessage\":\"Invalid handler signature: wrong handler. Expected something like \\\"Module.function\\\".\",\"errorType\":\"InitializationError\"}"}
   end
 end
@@ -68,25 +101,26 @@ defmodule BackendMock do
   def backend(
         :post,
         '/runtime/invocation/--request-id--/response',
-        'application/json', body
+        content_type,
+        body
       ),
-      do: {:mock, body}
+      do: {:mock, content_type, body}
 
   def backend(
         :post,
         '/runtime/invocation/--request-id--/error',
-         'application/json', body
+        content_type,
+        body
       ),
-      do: {:mock, body}
-
+      do: {:mock, content_type, body}
 end
 
 defmodule HttpcMock do
   def request(
         :post,
-        {'http://lambdahost/2018-06-01/runtime/init/error', [], 'application/json', body},
+        {'http://lambdahost/2018-06-01/runtime/init/error', [], content_type, body},
         [],
         []
       ),
-      do: {:mock, body}
+      do: {:mock, content_type, body}
 end
