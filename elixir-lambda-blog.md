@@ -31,5 +31,7 @@ The Lambda model is straight forward. It's good to see that the use of custom ru
 
 Have a look at the [Elixir Lambda](https://github.com/amolenaar/elixir_lambda) repository and give it a go. I've added Cloudformation templates and a Makefile for convenience. Let me know what you think!
 
+----
+
 <a name="footnote1">[1]</a> Well, you could execute F# code with the .Net runtime.
 
