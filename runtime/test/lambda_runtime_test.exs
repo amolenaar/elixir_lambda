@@ -31,6 +31,14 @@ defmodule LambdaRuntimeTest do
     assert handle(fn _e, _c -> {:ok, 42} end) == {:mock, 'application/octet-stream', "42"}
   end
 
+  test "handling of an event with custom content type" do
+    assert handle(fn _e, _c -> {:ok, 'text/numeral', 42} end) == {:mock, 'text/numeral', "42"}
+  end
+
+  test "handling of an event with custom content type defined with a string" do
+    assert handle(fn _e, _c -> {:ok, "text/numeral", 42} end) == {:mock, 'text/numeral', "42"}
+  end
+
   test "an error response" do
     assert handle(fn _e, _c -> {:error, "Error message"} end) ==
              {:mock, 'application/json',
@@ -40,7 +48,7 @@ defmodule LambdaRuntimeTest do
   test "an non-string error response" do
     assert handle(fn _e, _c -> {:error, %{:message => "Error message"}} end) ==
              {:mock, 'application/json',
-              "{\"errorMessage\":{\"message\":\"Error message\"},\"errorType\":\"RuntimeException\"}"}
+              "{\"errorMessage\":\"{:error, %{message: \\\"Error message\\\"}}\",\"errorType\":\"RuntimeException\"}"}
   end
 
   test "handling of an event with just some output" do

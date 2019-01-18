@@ -33,8 +33,8 @@ defmodule LambdaRuntime do
       loop(backend, handler)
     else
       send_init_error(
-        backend,
-        "Invalid handler signature: #{handler_name}. Expected something like \"Module.function\"."
+        "Invalid handler signature: #{handler_name}. Expected something like \"Module.function\".",
+        backend
       )
     end
   end
@@ -45,13 +45,17 @@ defmodule LambdaRuntime do
   end
 
   def handle(backend, handler) do
-    backend.(:get, '/runtime/invocation/next', nil, nil)
-    |> parse_request()
-    |> (fn {event, context, request_id} -> {handler.(event, context), request_id} end).()
-    |> handle_response(backend)
+    with {:ok, request} <- backend.(:get, '/runtime/invocation/next', nil, nil),
+         {:ok, event, context, request_id} <- parse_request(request) do
+      handler.(event, context)
+      |> send_response(request_id, backend)
+    else
+      maybe_error ->
+        IO.puts("Error while requesting Lambda request: #{inspect(maybe_error)}. So long!")
+    end
   end
 
-  defp parse_request({:ok, {{'HTTP/1.1', 200, 'OK'}, headers, body}}) do
+  defp parse_request({{'HTTP/1.1', 200, 'OK'}, headers, body}) do
     headers = Map.new(headers)
     content_type = Map.get(headers, 'content-type')
     request_id = Map.get(headers, 'lambda-runtime-aws-request-id')
@@ -72,50 +76,55 @@ defmodule LambdaRuntime do
       :cognito_identity => Map.get(headers, 'lambda-runtime-cognito-identity')
     }
 
-    {event, context, request_id}
+    {:ok, event, context, request_id}
   end
 
   defp parse_request(maybe_error) do
-    IO.puts("Error while requesting Lambda request: #{inspect(maybe_error)}. So long!")
+    {:error, maybe_error}
   end
 
-  defp handle_response({{:ok, response}, request_id}, backend)
+  defp send_response({:ok, response}, request_id, backend)
        when is_map(response) or is_list(response) do
     {:ok, response} = Jason.encode(response)
-    send_response(backend, request_id, @content_type_json, response)
+    send_response({:ok, @content_type_json, response}, request_id, backend)
   end
 
-  defp handle_response({{:ok, response}, request_id}, backend) when is_binary(response) do
-    send_response(backend, request_id, 'text/plain', response)
+  defp send_response({:ok, response}, request_id, backend) when is_binary(response) do
+    send_response({:ok, 'text/plain', response}, request_id, backend)
   end
 
-  defp handle_response({{:ok, response}, request_id}, backend) do
-    send_response(backend, request_id, 'application/octet-stream', Kernel.inspect(response))
+  defp send_response({:ok, response}, request_id, backend) do
+    send_response(
+      {:ok, 'application/octet-stream', Kernel.inspect(response)},
+      request_id,
+      backend
+    )
   end
 
-  defp handle_response({{:ok, content_type, response}, request_id}, backend)
+  defp send_response({:ok, content_type, response}, request_id, backend)
+       when is_binary(content_type) do
+    send_response({:ok, content_type |> String.to_charlist(), response}, request_id, backend)
+  end
+
+  defp send_response({:ok, content_type, response}, request_id, backend)
        when is_binary(response) do
-    send_response(backend, request_id, content_type, response)
-  end
-
-  defp handle_response({{:ok, content_type, response}, request_id}, backend) do
-    send_response(backend, request_id, content_type, Kernel.inspect(response))
-  end
-
-  defp handle_response({{:error, message}, request_id}, backend) do
-    send_error(backend, request_id, message)
-  end
-
-  defp handle_response({what_else, request_id}, backend) do
-    send_error(backend, request_id, Kernel.inspect(what_else))
-  end
-
-  defp send_response(backend, request_id, content_type, body) do
     url = '/runtime/invocation/' ++ request_id ++ '/response'
-    backend.(:post, url, content_type, body)
+    backend.(:post, url, content_type, response)
   end
 
-  defp send_error(backend, request_id, message) do
+  defp send_response({:ok, content_type, response}, request_id, backend) do
+    send_response({:ok, content_type, Kernel.inspect(response)}, request_id, backend)
+  end
+
+  defp send_response({:error, message}, request_id, backend) when is_binary(message) do
+    send_error(message, request_id, backend)
+  end
+
+  defp send_response(what_else, request_id, backend) do
+    send_error(Kernel.inspect(what_else), request_id, backend)
+  end
+
+  defp send_error(message, request_id, backend) do
     url = '/runtime/invocation/' ++ request_id ++ '/error'
 
     body =
@@ -127,7 +136,7 @@ defmodule LambdaRuntime do
     backend.(:post, url, @content_type_json, body)
   end
 
-  defp send_init_error(backend, message) do
+  defp send_init_error(message, backend) do
     url = '/runtime/init/error'
 
     body =
