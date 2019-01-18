@@ -4,3 +4,4 @@ example-*.zip
 .cfn-artifact-bucket
 .cfn-elixir-example
 test-output.txt
+bash/
