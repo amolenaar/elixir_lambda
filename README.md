@@ -85,10 +85,10 @@ Content can be a dictionary or list, in which case it's serialized to JSON. If i
 
 If a `content_type` is provided that is used instead. Binary content is returned as is, the rest is "inspected".
 
-The context object contains some extra info about the event:
+The context object contains some extra info about the event, as charlists(!):
 
-  - `:content_type`
-  - `:request_id`
+  - `:content_type` => `'application/json'`
+  - `:request_id` => `'abcdef-1234-1234`'
   - `:deadline`
   - `:function_arn`
   - `:trace_id`

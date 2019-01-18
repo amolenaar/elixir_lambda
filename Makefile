@@ -25,7 +25,7 @@ $(RUNTIME_ZIP): Dockerfile bootstrap
 example: $(EXAMPLE_ZIP)
 
 $(EXAMPLE_ZIP): example/lib/example.ex example/mix.exs $(RUNTIME_ZIP)
-	docker run -w /code -v $(PWD)/example:/code -u $(shell id -u):$(shell id -g) -e MIX_ENV=prod $(LAYER_NAME) mix package
+	docker run -w /code -v $(PWD)/example:/code -u $(shell id -u):$(shell id -g) -e MIX_ENV=prod $(LAYER_NAME) mix do test, package
 
 aws-check:
 	@echo "Performing a pre-flight check..."
