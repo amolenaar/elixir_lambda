@@ -2,7 +2,7 @@
 
 At the most recent AWS Re:invent, Amazon announced support for custom runtimes on AWS Lambda. Layers provide the ability to enrich a Lambda runtime environment with shared code, such as libraries or a custom startup script.
 
-AWS has support for quite a few languages out of the box; NodeJS being the fastest, but not always the most readable one. Python can be edited from the AWS Console, while for Java, C# and Go binaries have to be uploaded.
+AWS has support for quite a few languages out of the box. NodeJS being the fastest, but not always the most readable one. You can edit Python from the AWS Console, while for Java, C# and Go you'll have to upload binaries.
 
 The odd thing, in my opinion, is that there are no functional languages in the list of supported languages<sup>[1](#footnote1)</sup>. Although the service name would assume something in the area of [functional programming](https://en.wikipedia.org/wiki/Functional_programming). The working of a function itself is also pretty straightforward: an input event gets processed and an output event is returned (_emitted_ if you like).
 
@@ -21,7 +21,7 @@ The de facto way to distribute an Erlang application is by means of an OTP relea
 
 ## Benchmarks
 
-We all want it to be fast. I have not done a full-blown performance test, but for the example, (hello world) function I deployed the responses were quite okay, as low as twenty ms, and many times just a couple of milliseconds.
+We all want it to be fast. I have not done a full-blown performance test. For a Hello-world function I deployed the responses were quite okay. As low as twenty ms, and many times only a couple of milliseconds.
 
 The cold start speed is about 1.3 seconds, according to AWS X-Ray. This is comparable to Java. After starting the Lambda function is "hot" and only shuts down after 15 minutes of idle time. I want to see if I can bring the startup time down even further. One area of investigation is the bootstrap script used by Erlang. Maybe it can be made smaller, e.g. removing all code related to clustering. At this point Erlang's legacy is kind of in the way for its use as a Lambda language: the Erlang/OTP ecosystem is built to create applications that never go down, like telephone switches. For Lambda, we have the certainty that this will never be a long-lived process.
 
