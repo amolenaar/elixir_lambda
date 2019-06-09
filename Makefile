@@ -53,12 +53,12 @@ aws-check:
 	touch .cfn-artifact-bucket
 
 .s3-upload-runtime-$(REV): .cfn-artifact-bucket $(RUNTIME_ZIP)
-	ARTIFACT_STORE=$(shell aws cloudformation list-exports |  python2 -c "import sys, json; print(filter(lambda e: e['Name'] == 'artifact-store', json.load(sys.stdin)['Exports'])[0]['Value'])") && \
+	ARTIFACT_STORE=$(shell aws cloudformation list-exports |  python -c "import sys, json; print(list(filter(lambda e: e['Name'] == 'artifact-store', json.load(sys.stdin)['Exports']))[0]['Value'])") && \
 	aws s3 cp $(RUNTIME_ZIP) s3://$${ARTIFACT_STORE}/$(S3_RUNTIME_ZIP) && \
 	touch .s3-upload-runtime-$(REV)
 
 .s3-upload-example-$(REV): .cfn-artifact-bucket $(EXAMPLE_ZIP)
-	ARTIFACT_STORE=$(shell aws cloudformation list-exports |  python2 -c "import sys, json; print(filter(lambda e: e['Name'] == 'artifact-store', json.load(sys.stdin)['Exports'])[0]['Value'])") && \
+	ARTIFACT_STORE=$(shell aws cloudformation list-exports |  python -c "import sys, json; print(list(filter(lambda e: e['Name'] == 'artifact-store', json.load(sys.stdin)['Exports']))[0]['Value'])") && \
 	aws s3 cp $(EXAMPLE_ZIP) s3://$${ARTIFACT_STORE}/$(S3_EXAMPLE_ZIP) && \
 	touch .s3-upload-example-$(REV)
 
