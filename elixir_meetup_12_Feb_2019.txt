@@ -1,0 +1,360 @@
+--
+
+
+
+
+
+
+
+
+                            Elixir on AWS Lambda
+
+
+
+
+
+
+
+
+
+
+     Elixir Meetup                                Arjan Molenaar
+     Feb 12, 2019                                 Software consultant @ Xebia
+
+
+--
+
+
+
+                            Elixir on AWS Lambda
+
+
+                            - What is AWS Lambda
+
+                            - Why AWS Lambda
+
+                            - How to deploy
+
+                            - AWS Lambda execution model
+
+                            - About the runtime
+
+                            - Packaging the function
+
+
+
+
+
+
+--
+
+
+
+                            What is AWS Lambda
+
+
+                            - Serverless
+
+                            - No hardware? Right!
+
+                            - Short lived
+
+
+
+
+
+
+
+
+
+
+
+
+--
+
+
+
+                            Why AWS Lambda
+
+
+                            - Pay per use
+
+                            - No hardware! Easy to startup
+
+                            - Extends functional paradigm
+                              (data in -> data out)
+
+                            - Elixir is a nice language
+                              (pattern matching!)
+
+
+
+
+
+
+
+
+--
+
+
+
+                            How to deploy
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  (Note to self: prepare demo)
+
+
+--
+
+
+
+                            Execution model
+
+
+                       +---+
+                       |   |
+                       | A |
+                       | W |
+                       | S |
+                       |   |
+    Incoming request   | L |
+    ------------------>+ a |
+                       | m |
+                       | b |
+                       | d |
+                       | a |
+                       |   |
+                       |   |
+                       +---+
+
+
+--
+
+
+
+                            Execution model (2)
+
+
+                       +---+                   +--------------------------+
+                       |   |                   |                          |
+                       | A |                   | VM                       |
+                       | W |                   |                          |
+                       | S |                   |                          |
+                       |   |                   |                          |
+    Incoming request   | L |                   |                          |
+    ------------------>+ a |                   |                          |
+                       | m |                   |                          |
+                       | b |                   |                          |
+                       | d |                   |                          |
+                       | a |                   |                          |
+                       |   |                   |                          |
+                       |   |                   |                          |
+                       +---+                   +--------------------------+
+
+
+--
+
+
+
+                            Execution model (3)
+
+
+                       +---+                   +--------------------------+
+                       |   |                   |                          |
+                       | A |                   | VM                       |
+                       | W |                   |                          |
+                       | S |                   |  +--------------------+  |
+                       |   |                   |  |                    |  |
+    Incoming request   | L |                   |  | Our function       |  |
+    ------------------>+ a |                   |  |                    |  |
+                       | m |                   |  +--------------------+  |
+                       | b |                   |  |                    |  |
+                       | d |                   |  | Runtime layer      |  |
+                       | a |                   |  |                    |  |
+                       |   |                   |  +--------------------+  |
+                       |   |                   |                          |
+                       +---+                   +--------------------------+
+
+
+--
+
+
+
+                            Execution model (4)
+
+
+                       +---+                   +--------------------------+
+                       |   |                   |                          |
+                       | A |                   | VM                       |
+                       | W |                   |                          |
+                       | S |                   |  +--------------------+  |
+                       |   |                   |  |                    |  |
+    Incoming request   | L |                   |  | Our function       |  |
+    ------------------>+ a |                   |  |                    |  |
+                       | m |  Poll for request |  +--------------------+  |
+                       | b +<---------------------+                    |  |
+                       | d |                   |  | Runtime layer      |  |
+                       | a |                   |  |                    |  |
+                       |   |                   |  +--------------------+  |
+                       |   |                   |                          |
+                       +---+                   +--------------------------+
+
+
+--
+
+
+
+                            Execution model (5)
+
+
+                       +---+                   +--------------------------+
+                       |   |                   |                          |
+                       | A |                   | VM                       |
+                       | W |                   |                          |
+                       | S |                   |  +--------------------+  |
+                       |   |                   |  |                    |  |
+    Incoming request   | L |                   |  | Our function       |  |
+    ------------------>+ a |                   |  |                    |  |
+                       | m |  Poll for request |  +--------------------+  |
+                       | b +<---------------------+                    |  |
+                       | d |                   |  | Runtime layer      |  |
+                       | a +<---------------------+                    |  |
+                       |   |  POST result      |  +--------------------+  |
+                       |   |                   |                          |
+                       +---+                   +--------------------------+
+
+
+--
+
+
+
+                            Execution model (6)
+
+
+                       +---+                   +--------------------------+
+                       |   |                   |                          |
+                       | A |                   | VM                       |
+                       | W |                   |                          |
+                       | S |                   |  +--------------------+  |
+                       |   |                   |  |                    |  |
+    Incoming request   | L |                   |  | Our function       |  |
+    ------------------>+ a |                   |  |                    |  |
+                       | m |  Poll for request |  +--------------------+  |
+                       | b +<---------------------+                    |  |
+                       | d |                   |  | Runtime layer      |  |
+    Response           | a +<---------------------+                    |  |
+    <------------------+   |  POST result      |  +--------------------+  |
+                       |   |                   |                          |
+                       +---+                   +--------------------------+
+
+
+--
+
+
+
+                            About the runtime
+
+
+                            - The runtime is short running
+
+                            - Applications like Mnesia,
+                              Observer can be left out
+
+                            - Reduced runtime to about 23MB
+
+
+
+
+
+
+
+
+
+
+
+--
+
+
+
+                            Packaging the function
+
+
+                            - Keep it small
+
+                            - Just the function
+
+                            - Function defined as parameter
+
+                            - No OTP release
+
+
+
+
+
+
+
+
+
+
+--
+
+
+
+                            What's next
+
+
+                            - Allow uploading of exs files
+
+                            - Is this usable?
+
+                            - Convenience package for
+                              testing & packaging?
+
+
+
+
+
+
+
+
+
+
+
+--
+
+
+
+                            Elixir on AWS Lambda
+
+
+
+                            Arjan Molenaar
+
+                            Twitter: @ajmolenaar
+
+                            https://github.com/amolenaar
+
+
+
+
+
+
+
+
+
+
+**
