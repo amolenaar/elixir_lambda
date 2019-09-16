@@ -30,10 +30,12 @@ COPY runtime/ /work/runtime/
 
 RUN cd /work/runtime && \
   mix local.hex --force && \
+  mix deps.get && \
   mix test && \
   MIX_ENV=prod mix package && \
   rm -r _build/prod/lib/*/.mix _build/prod/lib/runtime/consolidated && \
-  cp -r _build/prod/lib/* /opt/lib
+  cp -r _build/prod/lib/* /opt/lib && \
+  chmod 555 /opt/bootstrap
 
 # Package
 RUN cd /opt && \
