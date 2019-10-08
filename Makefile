@@ -42,7 +42,7 @@ $(EXAMPLE_ZIP): example/lib/example.ex example/mix.exs $(RUNTIME_ZIP)
 	docker run -w /code -v $(PWD)/example:/code -u $(shell id -u):$(shell id -g) -e MIX_ENV=prod $(LAYER_NAME) mix do test, package
 
 aws-check:
-	@echo "Performing a pre-flight check..."
+	@echo "Performing pre-flight check..."
 	@aws cloudformation describe-account-limits > /dev/null || { echo "Could not reach AWS, please set your AWS_PROFILE or access keys." >&2 && false; }
 
 .cfn-artifact-bucket: ./templates/artifact-bucket.yaml
