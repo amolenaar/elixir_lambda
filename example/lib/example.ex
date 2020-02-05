@@ -3,18 +3,13 @@ defmodule Example do
   Example Lambda function.
   """
 
-  @doc """
-  Hello world.
+  require Logger
 
-  ## Examples
-
-      iex> Example.hello(%{}, %{})
-      {:ok, %{ :message => "Elixir on AWS Lambda", event: %{} }}
-
-  """
-
-  def hello(event, context),
-    do:
-      #{:ok, %{:message => "Elixir on AWS Lambda", :event => event, :context => inspect(context)}}
-      {:ok, %{:message => "Elixir on AWS Lambda", :event => event}}
+  def hello(event, context) do
+    Logger.info("Event: #{inspect(event)}")
+    Logger.info("Context: #{inspect(context)}")
+    # need to return an empty map because the default API Gateway response
+    # proxy only accepts an empty json response
+    {:ok, %{}}
+  end
 end
