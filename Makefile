@@ -39,7 +39,9 @@ $(RUNTIME_ZIP): Dockerfile bootstrap
 	docker run --rm $(LAYER_NAME) cat /tmp/runtime.zip > ./$(RUNTIME_ZIP)
 
 $(EXAMPLE_ZIP): example/lib/example.ex example/mix.exs $(RUNTIME_ZIP)
-	docker run -w /code -v $(PWD)/example:/code -u $(shell id -u):$(shell id -g) -e MIX_ENV=prod $(LAYER_NAME) mix do test, package
+	# docker run -w /code -v $(PWD)/example:/code -u $(shell id -u):$(shell id -g) -e MIX_ENV=prod $(LAYER_NAME) mix do test, package
+	# don't understand why $(PWD) wasn't resolving to /vagrant/code/elixir_lambda
+	docker run -w /code -v /vagrant/code/elixir_lambda/example:/code -u $(shell id -u):$(shell id -g) -e MIX_ENV=prod $(LAYER_NAME) mix do test, package
 
 aws-check:
 	@echo "Performing pre-flight check..."
@@ -74,4 +76,3 @@ aws-check:
 		--capabilities "CAPABILITY_IAM" \
 		--no-fail-on-empty-changeset && \
 	touch .cfn-elixir-example
-
