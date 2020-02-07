@@ -23,7 +23,7 @@ RUN curl -SL http://erlang.org/download/otp_src_${ERLANG_VERSION}.tar.gz | tar x
 
 RUN curl -SLo /work/Precompiled.zip https://github.com/elixir-lang/elixir/releases/download/v${ELIXIR_VERSION}/Precompiled.zip && \
   cd /opt && \
-  unzip /work/Precompiled.zip && \
+  unzip -q /work/Precompiled.zip && \
   rm -r /opt/lib/elixir/lib /opt/lib/eex/lib /opt/lib/logger/lib /opt/man /opt/lib/ex_unit/lib /opt/lib/iex /opt/bin/*.bat /opt/bin/*.ps1
 
 COPY bootstrap /opt/
@@ -40,4 +40,4 @@ RUN cd /work/runtime && \
 
 # Package
 RUN cd /opt && \
-  zip -yr /tmp/runtime.zip ./*
+  zip -qyr /tmp/runtime.zip ./*
