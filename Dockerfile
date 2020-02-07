@@ -3,13 +3,12 @@ FROM lambci/lambda-base:build
 ARG ERLANG_VERSION
 ARG ELIXIR_VERSION
 
+LABEL erlang.version=${ERLANG_VERSION} \
+      elixir.version=${ELIXIR_VERSION}
+
 WORKDIR /work
 
-ADD https://github.com/elixir-lang/elixir/releases/download/v${ELIXIR_VERSION}/Precompiled.zip /work/
-ADD http://erlang.org/download/otp_src_${ERLANG_VERSION}.tar.gz /work/
-
-
-RUN tar xf otp_src_${ERLANG_VERSION}.tar.gz && \
+RUN curl -SL http://erlang.org/download/otp_src_${ERLANG_VERSION}.tar.gz | tar xz && \
   cd /work/otp_src_${ERLANG_VERSION} && \
   ./configure --disable-hipe --without-termcap --without-javac \
     --without-dialyzer --without-diameter --without-debugger --without-edoc \
@@ -20,8 +19,11 @@ RUN tar xf otp_src_${ERLANG_VERSION}.tar.gz && \
     --without-megaco --without-sasl  --without-syntax_tools --without-tools \
     --prefix=/opt && \
   make install && \
-  cd /opt && unzip /work/Precompiled.zip && \
-  rm -r /opt/lib/erlang/lib/*/src /opt/lib/erlang/misc /opt/lib/erlang/usr && \
+  rm -r /opt/lib/erlang/lib/*/src /opt/lib/erlang/misc /opt/lib/erlang/usr
+
+RUN curl -SLo /work/Precompiled.zip https://github.com/elixir-lang/elixir/releases/download/v${ELIXIR_VERSION}/Precompiled.zip && \
+  cd /opt && \
+  unzip /work/Precompiled.zip && \
   rm -r /opt/lib/elixir/lib /opt/lib/eex/lib /opt/lib/logger/lib /opt/man && \
   rm -r /opt/lib/ex_unit/lib /opt/lib/mix/lib /opt/lib/iex
 
