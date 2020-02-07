@@ -27,11 +27,10 @@ The cold start speed is about 1.3 seconds, according to AWS X-Ray. This is compa
 
 ## Final thoughts
 
-The Lambda model is straight forward. It's good to see that the use of custom runtimes does not involve a performance hit. With the tools described above, it's quite straightforward to add support for a language not present on AWS Lambda today. You'll have to do without the web editor, which I did not consider a big loss since I want to put my code in Git anyway.
+The Lambda model is straight forward. It's good to see that the use of custom runtimes does not involve a performance hit. With the tools described above, it's quite simple to add support for a language not present on AWS Lambda today. You can even use the web editor, which is nice, but not a big deal since your code needs to be put in source control anyway.
 
 Have a look at the [Elixir Lambda](https://github.com/amolenaar/elixir_lambda) repository and give it a go. I've added Cloudformation templates and a Makefile for convenience. Let me know what you think!
 
 ----
 
 <a name="footnote1">[1]</a> Well, you could execute F# code with the .Net runtime.
-

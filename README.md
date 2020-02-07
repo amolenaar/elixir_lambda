@@ -34,10 +34,13 @@ All in all, this keeps the layer relatively small (23MB) for a complete system.
 # Getting it up and running
 
 In general, it's good practice to deploy code on AWS by means of Cloudformation
-templates. The example setup provided is no different. It does deploy 2 stacks:
+templates. The example setup provided is no different. It does deploy 3 stacks:
 
  1. An S3 bucket acts as an intermediate storage location for Lambda code
- 2. A stack featuring the Elixir runtime, with an example function.
+ 2. A stack featuring the Elixir runtime, with an example function containing
+    compiled code (BEAM files).
+ 3. A stack containing Elixir source code. This project can be edited with the
+    AWS Lambda editor.
 
 To work with this repo, there are a few prerequisites to set up:
 
@@ -50,12 +53,12 @@ cloudformation list-stacks`). If this does not work, set your `AWS_PROFILE` or
 access keys. You do not need to have Erlang/Elixir installed on your system since
 we do the building from Docker containers.
 
-To deploy the S3 bucket stack and the example stack, simply type:
+To deploy the S3 bucket stack and the example stacks, simply type:
 
     make
 
 This will build the zip files, upload them to S3 and deploy the custom runtime
-and a Lambda function.
+and Lambda functions.
 
 To test the function, simply call:
 
@@ -97,7 +100,7 @@ The context map contains some extra info about the event, as charlists(!):
     %{
       :content_type => 'application/json'
       :request_id => 'abcdef-1234-1234`
-      :deadline => '1547815888328'
+      :deadline => 1547815888328
       :function_arn => 'arn:aws:lambda:eu-west-1:1234567890:function:elixir-runtime-example'
       :trace_id => 'Root=1-5c4...'
       :client_context => 'a6f...'
@@ -106,13 +109,3 @@ The context map contains some extra info about the event, as charlists(!):
 
 The runtime is bundled with [Jason](https://hex.pm/packages/jason), a fast 100% Elixir JSON
 serializer/deserializer.
-
-## Some work/considerations
-
-- [X] How to deal with consolidated beam files (used for protocols) - for now,
-  leave as is.
-- [X] How to keep the lambda code itself as small as possible? Removed as many
-  apps from the deployment as possible
-- [ ] Support 5xx and 5xx response codes from AWS Lambda side
-- [ ] Mix task for packaging code
-
