@@ -42,6 +42,3 @@ RUN cd /work/runtime && \
 # Package
 RUN cd /opt && \
   zip -yr /tmp/runtime.zip ./*
-
-  # zip -yr /tmp/runtime.zip bootstrap LICENSE bin/elixir bin/erl lib/eex/ebin lib/exixir/ebin \
-  #   lib/jason/ebin lib/logger/ebin lib/runtime/ebin lib/erlang

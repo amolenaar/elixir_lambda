@@ -19,6 +19,9 @@ all: test
 
 build: $(RUNTIME_ZIP) $(EXAMPLE_ZIP)
 
+clean:
+	rm -f .cfn-* .s3-*
+
 artifact-bucket: aws-check .cfn-artifact-bucket
 
 elixir-example: aws-check .cfn-elixir-example
