@@ -1,8 +1,8 @@
 
 LAYER_NAME=elixir-runtime
 
-ERLANG_VERSION=21.2
-ELIXIR_VERSION=1.8.0
+ERLANG_VERSION=22.2
+ELIXIR_VERSION=1.10.0
 
 RUNTIME_ZIP=$(LAYER_NAME)-$(ELIXIR_VERSION).zip
 EXAMPLE_ZIP=example/example-0.1.0.zip
@@ -74,4 +74,3 @@ aws-check:
 		--capabilities "CAPABILITY_IAM" \
 		--no-fail-on-empty-changeset && \
 	touch .cfn-elixir-example
-
