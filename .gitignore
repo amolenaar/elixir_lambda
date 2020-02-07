@@ -2,6 +2,6 @@ elixir-runtime-*.zip
 example-*.zip
 .s3-upload-*
 .cfn-artifact-bucket
-.cfn-elixir-example
+.cfn-elixir-example-*
 test-output.txt
 bash/

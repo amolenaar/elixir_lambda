@@ -32,7 +32,7 @@ Resources:
   ExampleFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: elixir-runtime-example
+      FunctionName: !Ref AWS::StackName
       Handler: Example.hello
       Runtime: provided
       Code:
@@ -40,7 +40,7 @@ Resources:
         S3Key: !Ref ExampleZip
       Description: Our custom Elixir function
       MemorySize: 128
-      Timeout: 1
+      Timeout: 5
       Layers:
         - !Ref ElixirRuntime
       Role: !GetAtt FunctionRole.Arn

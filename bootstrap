@@ -1,15 +1,26 @@
 #!/bin/sh
-set -euo pipefail
+set -xeuo pipefail
 
-export HOME="${LAMBDA_TASK_ROOT}"
+export HOME="/tmp/task"
+
+echo "HOME=${HOME} ($(pwd))"
+
+ls -la
+id
+ls -la /tmp
 
 if test -f mix.exs
 then
- export MIX_ENV=${MIX_ENV:-prod}
- mix compile
- export ERL_LIBS="${LAMBDA_TASK_ROOT}/_build/${MIX_ENV}/lib"
+  mkdir -p ${HOME}
+  cp -r ${LAMBDA_TASK_ROOT}/* ${HOME}
+  cd ${HOME}
+
+  export MIX_ENV=${MIX_ENV:-prod}
+  export ERL_LIBS="${HOME}/_build/${MIX_ENV}/lib"
+
+  mix compile
 else
- export ERL_LIBS="${LAMBDA_TASK_ROOT}/lib"
+  export ERL_LIBS="${LAMBDA_TASK_ROOT}/lib"
 fi
 
 elixir -e "LambdaRuntime.run()"
