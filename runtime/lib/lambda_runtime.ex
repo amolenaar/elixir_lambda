@@ -29,16 +29,17 @@ defmodule LambdaRuntime do
 
     time_source = fn -> :erlang.system_time(:millisecond) end
 
-    if Regex.match?(~r"^[A-Z:][A-Za-z0-9_.]+$", handler_name) do
-      # TODO: check prerequisites. else report to '/runtime/init/error' and quit
-      {handler, _} = Code.eval_string("&#{handler_name}/2")
+    cond do
+      Regex.match?(~r/^[A-Z:][A-Za-z0-9_.]+$/, handler_name) ->
+        # TODO: check prerequisites. else report to '/runtime/init/error' and quit
+        {handler, _} = Code.eval_string("&#{handler_name}/2")
 
-      loop(backend, handler, time_source)
-    else
-      send_init_error(
-        "Invalid handler signature: #{handler_name}. Expected something like \"Module.function\".",
-        backend
-      )
+        loop(backend, handler, time_source)
+      true ->
+        send_init_error(
+          "Invalid handler signature: #{handler_name}. Expected something like \"Module.function\".",
+          backend
+        )
     end
   end
 

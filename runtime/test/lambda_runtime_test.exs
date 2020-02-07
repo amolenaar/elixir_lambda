@@ -3,7 +3,6 @@ defmodule LambdaRuntimeTest do
   doctest LambdaRuntime
 
   @timestamp_ms 0
-  @deadline_ms 100_000
 
   defp handle(handler),
     do: LambdaRuntime.handle(&BackendMock.backend/4, handler, @timestamp_ms)
