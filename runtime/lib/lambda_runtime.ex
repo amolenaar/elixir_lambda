@@ -10,6 +10,7 @@ defmodule LambdaRuntime do
   """
 
   @content_type_json 'application/json'
+  @lambda_max_timeout_ms 900_000
 
   def run(httpc \\ :httpc) do
     Application.ensure_all_started(:inets)
@@ -26,11 +27,13 @@ defmodule LambdaRuntime do
         httpc.request(:post, {base_url ++ url_path, [], content_type, body}, [], [])
     end
 
+    time_source = fn -> :erlang.system_time(:millisecond) end
+
     if Regex.match?(~r"^[A-Z:][A-Za-z0-9_.]+$", handler_name) do
       # TODO: check prerequisites. else report to '/runtime/init/error' and quit
       {handler, _} = Code.eval_string("&#{handler_name}/2")
 
-      loop(backend, handler)
+      loop(backend, handler, time_source)
     else
       send_init_error(
         "Invalid handler signature: #{handler_name}. Expected something like \"Module.function\".",
@@ -39,15 +42,17 @@ defmodule LambdaRuntime do
     end
   end
 
-  def loop(backend, handler) do
-    handle(backend, handler)
-    loop(backend, handler)
+  def loop(backend, handler, time_source) do
+    task = Task.async(fn -> handle(backend, handler, time_source.()) end)
+    Task.await(task, @lambda_max_timeout_ms)
+    loop(backend, handler, time_source)
   end
 
-  def handle(backend, handler) do
+  def handle(backend, handler, timestamp) do
     with {:ok, request} <- backend.(:get, '/runtime/invocation/next', nil, nil),
          {:ok, event, context, request_id} <- parse_request(request) do
-      handler.(event, context)
+      task = Task.async(fn -> handler.(event, context) end)
+      Task.await(task, context.deadline - timestamp)
       |> send_response(request_id, backend)
     else
       maybe_error ->
@@ -69,7 +74,7 @@ defmodule LambdaRuntime do
     context = %{
       :content_type => content_type,
       :request_id => request_id,
-      :deadline => Map.get(headers, 'lambda-runtime-deadline-ms'),
+      :deadline => Map.get(headers, 'lambda-runtime-deadline-ms') |> List.to_integer(),
       :function_arn => Map.get(headers, 'lambda-runtime-invoked-function-arn'),
       :trace_id => Map.get(headers, 'lambda-runtime-trace-id'),
       :client_context => Map.get(headers, 'lambda-runtime-client-context'),
@@ -79,9 +84,7 @@ defmodule LambdaRuntime do
     {:ok, event, context, request_id}
   end
 
-  defp parse_request(maybe_error) do
-    {:error, maybe_error}
-  end
+  defp parse_request(maybe_error), do: {:error, maybe_error}
 
   defp send_response({:ok, response}, request_id, backend)
        when is_map(response) or is_list(response) do
@@ -93,13 +96,13 @@ defmodule LambdaRuntime do
     send_response({:ok, 'text/plain', response}, request_id, backend)
   end
 
-  defp send_response({:ok, response}, request_id, backend) do
-    send_response(
-      {:ok, 'application/octet-stream', Kernel.inspect(response)},
-      request_id,
-      backend
-    )
-  end
+  defp send_response({:ok, response}, request_id, backend),
+    do:
+      send_response(
+        {:ok, 'application/octet-stream', Kernel.inspect(response)},
+        request_id,
+        backend
+      )
 
   defp send_response({:ok, content_type, response}, request_id, backend)
        when is_binary(content_type) do
@@ -112,17 +115,15 @@ defmodule LambdaRuntime do
     backend.(:post, url, content_type, response)
   end
 
-  defp send_response({:ok, content_type, response}, request_id, backend) do
-    send_response({:ok, content_type, Kernel.inspect(response)}, request_id, backend)
-  end
+  defp send_response({:ok, content_type, response}, request_id, backend),
+    do: send_response({:ok, content_type, Kernel.inspect(response)}, request_id, backend)
 
   defp send_response({:error, message}, request_id, backend) when is_binary(message) do
     send_error(message, request_id, backend)
   end
 
-  defp send_response(what_else, request_id, backend) do
-    send_error(Kernel.inspect(what_else), request_id, backend)
-  end
+  defp send_response(what_else, request_id, backend),
+    do: send_error(Kernel.inspect(what_else), request_id, backend)
 
   defp send_error(message, request_id, backend) do
     url = '/runtime/invocation/' ++ request_id ++ '/error'

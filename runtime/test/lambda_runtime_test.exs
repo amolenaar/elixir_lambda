@@ -2,8 +2,11 @@ defmodule LambdaRuntimeTest do
   use ExUnit.Case
   doctest LambdaRuntime
 
+  @timestamp_ms 0
+  @deadline_ms 100_000
+
   defp handle(handler),
-    do: LambdaRuntime.handle(&BackendMock.backend/4, handler)
+    do: LambdaRuntime.handle(&BackendMock.backend/4, handler, @timestamp_ms)
 
   test "handling of an event with a dictionary" do
     assert handle(fn _e, _c -> {:ok, %{:message => "Hello Elixir"}} end) ==
@@ -72,7 +75,8 @@ defmodule BackendMock do
       {:ok,
        {{'HTTP/1.1', 200, 'OK'},
         [
-          {'lambda-runtime-aws-request-id', '--request-id--'}
+          {'lambda-runtime-aws-request-id', '--request-id--'},
+          {'lambda-runtime-deadline-ms', '100000'}
         ],
         """
         {
