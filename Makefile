@@ -50,7 +50,7 @@ $(RUNTIME_ZIP): Dockerfile bootstrap
 	docker run --rm $(LAYER_NAME) cat /tmp/runtime.zip > ./$(RUNTIME_ZIP)
 
 $(EXAMPLE_BIN_ZIP): example/lib/example.ex example/mix.exs $(RUNTIME_ZIP)
-	docker run -w /code -v $(PWD)/example:/code -u $(shell id -u):$(shell id -g) -e MIX_ENV=prod $(LAYER_NAME) mix do test, package
+	docker run --rm -w /code -v $(PWD)/example:/code -u $(shell id -u):$(shell id -g) -e MIX_ENV=prod $(LAYER_NAME) mix do test, package
 
 $(EXAMPLE_SRC_ZIP): example/lib/example.ex example/mix.exs
 	cd example && zip -X $$(basename $(EXAMPLE_SRC_ZIP)) lib/example.ex mix.exs
